@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\User;
+use DataTables;
+
+class UserController extends Controller
+{
+    public function index(Request $request)
+
+    {
+
+        if ($request->ajax()) {
+
+            $data = User::select('*');
+
+            return Datatables::of($data)
+
+                ->addIndexColumn()
+
+                ->addColumn('status', function ($row) {
+
+                    if ($row->status == 'activo') {
+                        return '<span class="badge badge-primary">Active</span>';
+                    } else {
+                        return '<span class="badge badge-danger">Deactive</span>';
+                    }
+                })
+
+                ->filter(function ($instance) use ($request) {
+
+                    if ($request->get('status') == 'desactivado' || $request->get('status') == 'activo') {
+
+                        $instance->where('status', $request->get('status'));
+                    }
+
+
+
+                    if (!empty($request->get('search'))) {
+
+                        $instance->where(function ($w) use ($request) {
+
+                            $search = $request->get('search');
+
+                            $w->orWhere('name', 'LIKE', "%$search%")
+
+                                ->orWhere('email', 'LIKE', "%$search%");
+                        });
+                    }
+                })
+
+                ->rawColumns(['status'])
+
+                ->make(true);
+        }
+
+
+
+        return view('users');
+    }
+}
